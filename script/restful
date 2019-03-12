@@ -1,0 +1,30 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use FindBin;
+BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
+use Mojolicious::Commands;
+
+my $mode = 'devel';
+
+$ENV{'MOJO_HOME'} = do {
+    my @parts = split m!/!, $FindBin::Bin;
+    pop @parts;
+    join '/', @parts;
+};
+$ENV{'MOJO_MODE'} = $mode;
+$ENV{'MOJO_LOG_LEVEL'} = $mode eq 'product' ? 'warn' : 'warn';
+if($ENV{'MOJO_MODE'} ne 'product')
+{
+  $ENV{'MOJO_EXCEPTION_VERBOSE'}  = 1;
+  $ENV{'MOJO_IOLOOP_DEBUG'}       = 0;
+  $ENV{'MOJO_EVENTEMITTER_DEBUG'} = 0;
+  $ENV{'MOJO_DAEMON_DEBUG'}       = 0;
+  $ENV{'MOJO_TEMPLATE_DEBUG'}     = 1;
+  $ENV{'MOJO_WEBSOCKET_DEBUG'}    = 0;
+  $ENV{'MOJO_BASE_DEBUG'}         = 0;
+  $ENV{'MOJO_USERAGENT_DEBUG'}    = 1;
+}
+
+# Start command line interface for application
+Mojolicious::Commands->start_app('RESTful');
