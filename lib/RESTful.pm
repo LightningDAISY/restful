@@ -12,6 +12,8 @@ sub startup
     goto $self->app->log->can('warn');
   };
 
+warn "test1";
+
   # Load configuration from hash returned by config file
   my $config = $self->plugin('Config');
 

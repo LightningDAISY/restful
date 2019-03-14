@@ -5,7 +5,7 @@ use YAML::Syck;
 use List::Util;
 use IO::File;
 
-my @PARAMNAMES = qw{ status parameters currentParameters contentType };
+my @PARAMNAMES = qw{ status parameters requestMethod requestPath currentParameters contentType };
 my %YamlCache;
 
 my %ResponseTypes = (
@@ -30,6 +30,7 @@ sub setErrorMessage
 sub _parseYaml
 {
   my($self, $filePath) = @_;
+  warn "Reading $filePath ...";
   my $fh = IO::File->new($filePath, "r") or return $self->setErrorMessage($filePath . " is not found.");
   my $fbody = '';
   my $buf;
@@ -58,16 +59,6 @@ sub readYaml
 {
   my($self) = @_;
   $YamlCache{$self->{"yamlPath"}}
-}
-
-sub error
-{
-  my($self, $code, $message) = @_;
-  $self->status($code);
-  +{
-    code => $code,
-    message => $message,
-  }
 }
 
 sub path2regex
@@ -116,7 +107,7 @@ sub methodMatch
   $requestMethod = lc $requestMethod;
   for my $method(keys %$pathStruct)
   {
-    return $method if $requestMethod eq lc $method
+    return $requestMethod if $requestMethod eq lc $method
   }
   return
 }
@@ -428,6 +419,48 @@ sub makeTheResponse
   }
 }
 
+sub makeTheErrorResponse
+{
+  my($self, $code, $message) = @_;
+  $code ||= $self->status || 404;
+  my $yamlResponses = $YamlCache{$self->{"yamlPath"}}{"paths"}{$self->requestPath}{$self->requestMethod}{"responses"};
+  my $yamlResponse = exists $yamlResponses->{$code} ?
+    $yamlResponses->{$code} :
+    exists $yamlResponses->{"default"} ?
+      $yamlResponses->{"default"} :
+      undef
+  ;
+  $yamlResponse or do {
+    $self->debug("it has no response block ($code || default)");
+    return
+  };
+  my $responseType   = (keys %{$yamlResponse->{"content"}})[0];
+  my $responseHeader = $self->makeTheResponseHeader($yamlResponse) or return;
+  my $responseBody   = $self->makeTheResponseBody($yamlResponse, $responseType) or return;
+  $responseBody->{"message"}      ||= $message;
+  $responseBody->{"errorMessage"} ||= $message;
+
+  +{
+    type   => $responseType,
+    header => $responseHeader,
+    body   => $responseBody,
+  }
+}
+
+sub error
+{
+  my($self, $code, $message) = @_;
+  $self->status($code) if $code;
+  $self->makeTheErrorResponse($code, $message) || +{
+    type   => "application/json",
+    header => {},
+    body   => +{
+      code    => $code,
+      message => "$message ($code block is not found.)",
+    }
+  }
+}
+
 #
 # my $response = $ins->run(
 #   uri => $self->_getRequestPath,
@@ -453,7 +486,10 @@ sub run
   $self->parseComponents($YamlCache{$self->{"yamlPath"}});
   my $paths  = $YamlCache{$self->{"yamlPath"}}{"paths"};
   my $path   = $self->pathMatch($args{"uri"}, $paths) or return $self->error(404, $args{"uri"} . " path is not matched.");
+  $self->requestPath($path);
   my $method = $self->methodMatch($args{"method"}, $paths->{$path}) or return $self->error(404, $args{"uri"} . " method is not matched.");
+  $self->requestMethod($method);
+
   $self->currentParameters($paths->{$path}{$method}{"parameters"} || []);
   $self->setParameters("query",  $args{"params"});
   $self->setParameters("cookie", $args{"cookies"});
@@ -473,7 +509,6 @@ sub new
   my($class, %args) = @_;
   my $self = bless \%args, $class;
   return if not $args{"yamlPath"};
-
   $YamlCache{$args{"yamlPath"}} = undef if exists $args{"refresh"} and $args{"refresh"};
   $YamlCache{$args{"yamlPath"}} ||= $self->_parseYaml($args{"yamlPath"}) or return;
   $self->randomValue(RESTful::Presenter::OpenAPI::Stub::RandomValue->new);

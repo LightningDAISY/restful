@@ -53,13 +53,21 @@ sub getAllCookies
   \%cookies
 }
 
+sub setHeaders
+{
+  my($self, $headers) = @_;
+  for my $name(%$headers)
+  {
+    $self->res->headers->header($name => $headers->{$name})
+  }
+}
+
 # GET /ex/stub/example.yaml/user/list
 sub index
 {
   my($self, %args) = @_;
   my $yamlPath = $self->getYamlPath or return $self->error("invalid file name");
   my $yamlFullPath = $ENV{"MOJO_HOME"} . "/" . $self->config->{"yamlDir"} . $yamlPath;
-  warn "Reading $yamlFullPath ...";
   my $server = RESTful::Presenter::OpenAPI->new->stub(
     yamlPath => $yamlFullPath,
     refresh  => 1,
@@ -74,10 +82,11 @@ sub index
       headers => $self->req->headers->to_hash,
       cookies => $self->getAllCookies,
   ) or return $self->error($server->errorMessage);
-
+  $self->res->headers->header("content_type" => $res->{"type"}) if $res->{"type"};
+  $self->setHeaders($res->{"header"});
   $self->render(
     status => $server->status,
-    json   => $res,
+    json   => $res->{"body"},
   )
 }
 
