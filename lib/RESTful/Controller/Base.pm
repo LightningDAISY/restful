@@ -80,5 +80,23 @@ sub _parseJSONBody
 	\%parsed
 }
 
+sub getYamlPath
+{
+  my($self) = @_;
+  my $baseUri = $self->config->{"baseUri"} . $self->myUri;
+  my $yamlPath = $self->req->url;
+  $yamlPath =~ s!.*$baseUri!!;
+  return if $yamlPath !~ m!(.+\.ya?ml)!;
+  $1
+}
+
+sub getRequestPath
+{
+  my($self) = @_;
+  my($uri) = split m!\?!, $self->req->url, 2;
+  my($trash, $params) = split m!/(?:.+?\.ya?ml)!, $uri, 2;
+  $params || '/'
+}
+
 1
 

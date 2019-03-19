@@ -12,8 +12,6 @@ sub startup
     goto $self->app->log->can('warn');
   };
 
-warn "test1";
-
   # Load configuration from hash returned by config file
   my $config = $self->plugin('Config');
 
@@ -23,6 +21,7 @@ warn "test1";
   # Router
   my $r = $self->routes;
   $r = $r->any('/ex');
+  $r->any('/stub/*uri/README')->to('readme#index');
   $r->any('/stub/*uri')->to('stub#index');
 }
 

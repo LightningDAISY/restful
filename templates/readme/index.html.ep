@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" / >
+    <style>
+      h1 { margin:20px 0 0 10px; }
+      h2 { margin:20px 0 0 20px; }
+      h3 { margin:10px 0 0 30px; }
+      h4 { margin:10px 0 0 40px; }
+      p  { margin:10px 0 0 50px; padding:5px; overflow:scroll; }
+      pre  { margin:10px 0 0 50px; padding:5px; background-color:#eee; }
+      table { margin:10px 0 0 50px; }
+    </style> 
+    <title>README</title>
+  </head>
+  <body>
+    <h1>README</h1>
+
+    <h2>fullpath</h2>
+    <pre><%= $yamlPath %></pre>
+
+    <h2>paths</h2>
+    <% my $yaml = $server->readYaml; %>
+    <% if(not ref $yaml->{"paths"}) { %>
+      <p>"paths" is not found</p>
+    <% } else { %>
+      <% for my $path(keys %{$yaml->{"paths"}}) { %>
+        <h3><%= $path %></h3>
+        <% for my $method(keys %{$yaml->{"paths"}{$path}}) { %>
+          <h4><%= $method %></h4>
+          <% my $description = $yaml->{"paths"}{$path}{$method}{"description"}; %>
+          <% utf8::is_utf8 $description or utf8::decode $description; %>
+          <p><%= $description %></p>
+        <% } %>
+      <% }%>
+    <% } %>
+
+    <h2>how2use</h2>
+    <p>
+      登録済のリクエストを発行すると、exampleがあればexampleを、無ければ乱数値を返します。
+      未登録のリクエストにはステータスコード404で以下のようなJSONを返します。
+    </p>
+    <pre>
+{
+  error : {
+    code : 404,
+    message : "/test/ path is not matched."
+  }
+}
+    </pre>
+    <p>
+      YAMLファイルでエラー応答を規定した場合、ステータス400の応答ルートのmessageまたはerrorMessageにエラー文言を設定します。
+      messageまたはerrorMessageがあれば何もしません。つまり、どちらもあればスタブが独自にエラーメッセージを設定することはありません。
+    </p>
+
+    <h2>content-type</h2>
+    <h3>request</h3>
+    <p>
+
+    </p>
+    <h3>response</h3>
+    <p>
+      応答のcontent-typeは現状application/jsonのみです。
+      text/jsonやapplication/x-jsonもあろうかと思うので、YAMLに記載されたcontent-typeを返しますが、何れにしても応答のフォーマットはJSONになります。
+    </p>
+
+    <h2></h2>
+
+    <h2>environment</h2>
+    <table>
+    <% for my $key( keys %ENV ) { %>
+      <% if($key =~ /MOJO/) { %>
+        <tr><td><%= $key %></td><td><%= $ENV{$key} %></td>
+      <% } %>
+    <% } %>
+  </body>
+</html>

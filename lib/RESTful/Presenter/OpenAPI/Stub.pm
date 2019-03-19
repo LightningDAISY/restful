@@ -5,7 +5,7 @@ use YAML::Syck;
 use List::Util;
 use IO::File;
 
-my @PARAMNAMES = qw{ status parameters requestMethod requestPath currentParameters contentType };
+my @PARAMNAMES = qw{ status parameters requestBodies requestMethod requestPath currentParameters currentRequestBodies contentType };
 my %YamlCache;
 
 my %ResponseTypes = (
@@ -125,6 +125,47 @@ sub setParameters
   } 
 }
 
+#
+# $self->setBodies("json", { key1 => value1, key2 => value2 })
+#     ↓
+# $self->requestBodies(+{  })
+sub setBodies
+{
+  my($self, $category, $inputParams) = @_;
+  return 1 if(
+    not exists $self->currentRequestBodies->{"content"} or 
+    "HASH" ne ref $self->currentRequestBodies->{"content"}
+  );
+  my %types = (
+    "json" => "application/json",
+    "form" => "application/x-www-form-urlencoded",
+  );
+  my $contentType = $types{$category} or return $self->setErrorMessage("unknown category " . $category);
+  return $self->setErrorMessage("content is empty.") if not exists $self->currentRequestBodies->{"content"}{$contentType};
+
+  my $schema = $self->currentRequestBodies->{"content"}{$contentType}{"schema"} or return;
+
+  # TODO support array-items
+  if($schema->{"type"} eq "object")
+  {
+    for my $name(keys %{$schema->{"properties"}})
+    {
+      $self->parameters->{$category}{$name} = $inputParams->{$name};
+      push @{$self->currentParameters}, +{
+        in     => $category,
+        name   => $name,
+        required => $schema->{"properties"}{$name}{"required"},
+        schema => $schema->{"properties"}{$name},
+      }
+    }
+  }
+  else
+  {
+    return $self->debug($schema->{"type"} . " is not supported.") ;
+  }
+  1
+}
+
 sub isInteger
 {
   my($self, $value) = @_;
@@ -167,7 +208,7 @@ sub isValid
   {
     $name = $struct->{"name"};
     $category = $struct->{"in"};
-    if(not exists $self->parameters->{$category}{$name})
+    if(not exists $self->parameters->{$category}{$name} or not defined $self->parameters->{$category}{$name})
     {
       $struct->{"required"} ? return $self->setErrorMessage($name . " is required.") : next
     }
@@ -219,12 +260,13 @@ sub setDefault
     $category = $struct->{"in"};
     if(exists $struct->{"schema"} and exists $struct->{"schema"}{"default"})
     {
-      if(not not defined $self->parameters->{$category}{$name} or not length $self->parameters->{$category}{$name})
+      if(not defined $self->parameters->{$category}{$name} or not length $self->parameters->{$category}{$name})
       {
         $self->parameters->{$category}{$name} = $struct->{"schema"}{"default"}
       }
     }
   }
+  1
 }
 
 sub makeTheResponseHeader
@@ -483,6 +525,7 @@ sub run
   my($self, %args) = @_;
   $self->status(200);
   $self->parameters({});
+  $self->requestBodies({});
   $self->parseComponents($YamlCache{$self->{"yamlPath"}});
   my $paths  = $YamlCache{$self->{"yamlPath"}}{"paths"};
   my $path   = $self->pathMatch($args{"uri"}, $paths) or return $self->error(404, $args{"uri"} . " path is not matched.");
@@ -491,9 +534,12 @@ sub run
   $self->requestMethod($method);
 
   $self->currentParameters($paths->{$path}{$method}{"parameters"} || []);
+  $self->currentRequestBodies($paths->{$path}{$method}{"requestBody"} || {});
   $self->setParameters("query",  $args{"params"});
   $self->setParameters("cookie", $args{"cookies"});
   $self->setParameters("header", $args{"headers"});
+  $self->setBodies("json", $args{"json"});
+  $self->setBodies("form", $args{"form"});
   $self->setDefault;
   $self->isValid or return $self->error(400, $self->errorMessage);
   $self->makeTheResponse($paths->{$path}{$method}{"responses"}) or return $self->error(406, $self->errorMessage)
@@ -520,8 +566,8 @@ __END__
 
 newしてrunします。
 
-仕様書(YAML)にあって入力に無い値はundefになります。
-入力にあって仕様書(YAML)に無い値は捨てられます。
+仕様書(YAML)にあって入力に無い項目はundefになります。
+入力にあって仕様書(YAML)に無い項目は捨てられます。
 
 OpenAPIの型仕様が変わったらisValidから下を修正します。
 
