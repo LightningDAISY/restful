@@ -25,7 +25,7 @@
       <p>"paths" is not found</p>
     <% } else { %>
       <% for my $path(keys %{$yaml->{"paths"}}) { %>
-        <h3><%= $path %></h3>
+        <h3><a href="<%= $uriPrefix %><%= $path %>"><%= $path %></a></h3>
         <% for my $method(keys %{$yaml->{"paths"}{$path}}) { %>
           <h4><%= $method %></h4>
           <% my $description = $yaml->{"paths"}{$path}{$method}{"description"}; %>
@@ -56,22 +56,13 @@
     <h2>content-type</h2>
     <h3>request</h3>
     <p>
-
+      各メソッドによるx-www-form-urlencoded、application/jsonを送受信できます。
+      multipart/form-dataには未対応です。
     </p>
     <h3>response</h3>
     <p>
-      応答のcontent-typeは現状application/jsonのみです。
-      text/jsonやapplication/x-jsonもあろうかと思うので、YAMLに記載されたcontent-typeを返しますが、何れにしても応答のフォーマットはJSONになります。
+      YAMLに記載されたcontent-typeを返しますが、いずれの場合も応答のフォーマットはJSONになります。
     </p>
 
-    <h2></h2>
-
-    <h2>environment</h2>
-    <table>
-    <% for my $key( keys %ENV ) { %>
-      <% if($key =~ /MOJO/) { %>
-        <tr><td><%= $key %></td><td><%= $ENV{$key} %></td>
-      <% } %>
-    <% } %>
   </body>
 </html>

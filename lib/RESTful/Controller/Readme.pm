@@ -3,6 +3,7 @@ use Mojo::Base "RESTful::Controller::Base";
 use RESTful::Presenter::OpenAPI;
 
 has myUri => sub {"/stub"};
+has outerUri => sub {"http://54.249.50.37/ex/stub"};
 
 sub error
 {
@@ -22,9 +23,10 @@ sub index
     refresh  => 1,
   ) or return $self->error("$yamlFullPath is not found. (or invalid format)");
 
-  $self->stash("yamlPath" => $yamlFullPath);
-  $self->stash("server"   => $server);
-  $self->render(template => 'readme/index')
+  $self->stash("uriPrefix" => $self->outerUri . $yamlPath);
+  $self->stash("yamlPath"  => $yamlFullPath);
+  $self->stash("server"    => $server);
+  $self->render(template   => 'readme/index')
 }
 
 1
