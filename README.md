@@ -5,7 +5,14 @@
 ```
 sudo cpan YAML::Syck
 sudo cpan Mojolicious
+sudo cpan IO::Socket::SSL
+sudo cpan LWP::UserAgent
+sudo cpan LWP::Protocol::https
 cd restful
+vim lib/RESTful/Controller/Readme.pm
+
+< modify outerUri >
+
 hypnotoad script/restful
 ```
 
