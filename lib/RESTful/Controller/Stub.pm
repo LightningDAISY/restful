@@ -38,7 +38,7 @@ sub getAllCookies
 sub setHeaders
 {
   my($self, $headers) = @_;
-  for my $name(%$headers)
+  for my $name(keys %$headers)
   {
     $self->res->headers->header($name => $headers->{$name})
   }
@@ -77,7 +77,7 @@ sub index
       headers => $self->req->headers->to_hash,
       cookies => $self->getAllCookies,
   ) or return $self->error($server->errorMessage);
-  $self->res->headers->header("content_type" => $res->{"type"}) if $res->{"type"};
+  $self->res->headers->header("Content-Type" => $res->{"type"}) if $res->{"type"};
   $self->setHeaders($res->{"header"});
   $self->render(
     status => $server->status,

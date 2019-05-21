@@ -9,11 +9,16 @@ sudo cpan IO::Socket::SSL
 sudo cpan LWP::UserAgent
 sudo cpan LWP::Protocol::https
 cd restful
-vim lib/RESTful/Controller/Readme.pm
-
-< modify outerUri >
-
+cp r_e_s_tful.conf.base r_e_s_tful.conf
+vim r_e_s_tful.conf
+mkdir yamls  (default, copy your openapi-yaml-files in the directory)
 hypnotoad script/restful
+```
+
+## HTTP Request
+
+```
+wget https://example.com/ex/stub{/PATH/OF/OPENAPI/YAML/FILE.yaml}{/STUB'S/REQUEST/PATH}
 ```
 
 ## nginx.conf
@@ -23,7 +28,10 @@ hypnotoad script/restful
     server 127.0.0.1:6000;
   }
   location /ex {
-    proxy_pass http://hypnotoad;
+    return 302 /ex/;
+  }
+  location /ex/ {
+    proxy_pass http://hypnotoad/;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -39,3 +47,4 @@ hypnotoad script/restful
     #if_modified_since off;
   }
 ```
+

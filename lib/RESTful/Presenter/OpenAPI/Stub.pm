@@ -287,7 +287,11 @@ sub makeTheResponseHeader
 sub makeProperties
 {
   my($self, $currentSchema) = @_;
-  exists $currentSchema->{"properties"} or return $self->debug("schema has no properties");
+  if(not exists $currentSchema->{"properties"})
+  {
+    $self->debug("schema has no properties (returns empty properties)");
+    return {}
+  }
   my %result;
   for my $name(keys %{$currentSchema->{"properties"}})
   {
@@ -299,7 +303,11 @@ sub makeProperties
 sub makeItems
 {
   my($self, $currentSchema) = @_;
-  exists $currentSchema->{"items"} or return $self->debug("schema has no items");
+  if(not exists $currentSchema->{"items"})
+  {
+    $self->debug("schema has no items (returns empty items)");
+    return []
+  }
   my @result;
   if("ARRAY" eq ref $currentSchema->{"items"})
   {
@@ -322,7 +330,7 @@ sub makeItems
 sub replaceRef
 {
   my($self, $refKey) = @_;
-  $refKey =~ s!^\#/components/!!;
+  $refKey =~ s!^\#/components/schemas/!!;
   my @refKeys = split m!/!, $refKey;
   my $currentRef = $self->components;
   for(my $i=0; $i<=$#refKeys; $i++)
@@ -421,6 +429,7 @@ sub makeBoolean
 sub schemaLoop
 {
   my($self, $currentSchema) = @_;
+
   $currentSchema = $self->replaceRef($currentSchema->{'$ref'}) if exists $currentSchema->{'$ref'};
   return $self->makeOneOf($currentSchema->{"oneOf"}) if exists $currentSchema->{"oneOf"};
   return $self->makeAllOf($currentSchema->{"allOf"}) if exists $currentSchema->{"allOf"};

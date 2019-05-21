@@ -1,0 +1,21 @@
+{
+  secrets => ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
+  hypnotoad => {
+    listen  => ['http://*:6000'],
+    workers => 1,
+    upgrade_timeout => 1,
+  },
+  #
+  # baseUri is the prefix
+  # 
+  #  ex. set "/extern/proxy/path"
+  #       requested /extern/proxy/path/a/b/c => /a/b/c
+  #
+  baseUri  => '',
+
+  #
+  # global uri
+  #
+  outerUri => "https://example.com/ex/stub",
+  yamlDir => 'yamls',
+}

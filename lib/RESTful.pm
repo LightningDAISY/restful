@@ -20,7 +20,6 @@ sub startup
 
   # Router
   my $r = $self->routes;
-  $r = $r->any('/ex');
   $r->any('/stub/*uri/README')->to('readme#index');
   $r->any('/stub/*uri')->to('stub#index');
 }

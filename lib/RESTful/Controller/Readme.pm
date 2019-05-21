@@ -3,6 +3,10 @@ use Mojo::Base "RESTful::Controller::Base";
 use RESTful::Presenter::OpenAPI;
 
 has myUri => sub {"/stub"};
+has outerUri => sub {
+    my($self) = @_;
+    $self->config->{"outerUri"};
+};
 has outerUri => sub {"https://〜〜/ex/stub"};
 
 sub error
