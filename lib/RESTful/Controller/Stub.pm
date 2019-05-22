@@ -77,7 +77,11 @@ sub index
       headers => $self->req->headers->to_hash,
       cookies => $self->getAllCookies,
   ) or return $self->error($server->errorMessage);
-  $self->res->headers->header("Content-Type" => $res->{"type"}) if $res->{"type"};
+  my $charsetHeader = $self->config->{"charset"} ?
+    ";charset=" . $self->config->{"charset"} :
+    ""
+  ;
+  $self->res->headers->header("Content-Type" => $res->{"type"} . $charsetHeader) if $res->{"type"};
   $self->setHeaders($res->{"header"});
   $self->render(
     status => $server->status,

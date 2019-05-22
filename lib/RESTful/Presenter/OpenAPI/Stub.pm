@@ -437,10 +437,24 @@ sub schemaLoop
   return "" if not exists $currentSchema->{"type"} or not $currentSchema->{"type"} or not exists $ResponseTypes{$currentSchema->{"type"}};
   if(exists $currentSchema->{"example"})
   {
-    # for Mojo;:JSON begin
+    # for Mojo::JSON begin
+    if("HASH" eq ref $currentSchema->{"example"})
+    {
+      for my $key(keys %{$currentSchema->{"example"}})
+      {
+        utf8::is_utf8 $currentSchema->{"example"}{$key} or utf8::decode $currentSchema->{"example"}{$key};
+      }
+    }
     not ref $currentSchema->{"example"} and not utf8::is_utf8 $currentSchema->{"example"} and utf8::decode $currentSchema->{"example"};
-    # for Mojo;:JSON end
-    return $currentSchema->{"example"};
+    # for Mojo::JSON end
+    return $currentSchema->{"example"}
+  }
+  elsif(exists $currentSchema->{"default"})
+  {
+     # for Mojo::JSON begin
+    not ref $currentSchema->{"default"} and not utf8::is_utf8 $currentSchema->{"default"} and utf8::decode $currentSchema->{"default"};
+    # for Mojo::JSON end
+    return $currentSchema->{"default"}
   }
   my $methodName = $ResponseTypes{$currentSchema->{"type"}};
   my $format = exists $currentSchema->{"format"} ? $currentSchema->{"format"} : undef;
