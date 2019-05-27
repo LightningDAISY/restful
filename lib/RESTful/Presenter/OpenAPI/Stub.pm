@@ -363,12 +363,16 @@ sub makeAnyOf
   }
   my $shuffledAnyOfs = List::Util::shuffle($anyOfs);
   my $currentCount = int rand scalar @$anyOfs;
-  my @result;
+  my %result;
   for my $i(0..$currentCount)
   {
-    push @result, $self->schemaLoop($shuffledAnyOfs->[$i])
+    my $hashref = $self->schemaLoop($shuffledAnyOfs->[$i]);
+    for my $key(keys %$hashref)
+    {
+      $result{$key} = $hashref->{$key}
+    }
   }
-  \@result
+  \%result
 }
 
 sub makeAllOf
@@ -379,12 +383,16 @@ sub makeAllOf
     $self->debug("allOf is not an array");
     return []
   }
-  my @result;
+  my %result;
   for my $allOf(@$allOfs)
   {
-    push @result, $self->schemaLoop($allOf)
+    my $hashref = $self->schemaLoop($allOf);
+    for my $key(keys %$hashref)
+    {
+      $result{$key} = $hashref->{$key}
+    }
   }
-  \@result
+  \%result
 }
 
 sub makeNull
@@ -451,10 +459,18 @@ sub schemaLoop
   }
   elsif(exists $currentSchema->{"default"})
   {
-     # for Mojo::JSON begin
+    # for Mojo::JSON begin
     not ref $currentSchema->{"default"} and not utf8::is_utf8 $currentSchema->{"default"} and utf8::decode $currentSchema->{"default"};
     # for Mojo::JSON end
     return $currentSchema->{"default"}
+  }
+  elsif(exists $currentSchema->{"enum"} and "ARRAY" eq ref $currentSchema->{"enum"})
+  {
+
+    my $i = $self->randomValue->integer("int32", 0, scalar @{$currentSchema->{"default"}});
+    my $selected = $currentSchema->{"enum"}[$i];
+    not utf8::is_utf8 $selected and utf8::decode $selected;
+    return $selected
   }
   my $methodName = $ResponseTypes{$currentSchema->{"type"}};
   my $format = exists $currentSchema->{"format"} ? $currentSchema->{"format"} : undef;
