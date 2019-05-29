@@ -7,7 +7,10 @@ has outerUri => sub {
     my($self) = @_;
     $self->config->{"outerUri"};
 };
-has outerUri => sub {"https://〜〜/ex/stub"};
+has outerUri => sub {
+  my($self) = @_;
+  $self->config->{"outerUri"}
+};
 
 sub error
 {
