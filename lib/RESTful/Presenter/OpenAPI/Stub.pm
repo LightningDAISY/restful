@@ -438,7 +438,6 @@ sub makeBoolean
 sub schemaLoop
 {
   my($self, $currentSchema) = @_;
-
   $currentSchema = $self->replaceRef($currentSchema->{'$ref'}) if exists $currentSchema->{'$ref'};
   return $self->makeOneOf($currentSchema->{"oneOf"}) if exists $currentSchema->{"oneOf"};
   return $self->makeAllOf($currentSchema->{"allOf"}) if exists $currentSchema->{"allOf"};
@@ -477,18 +476,34 @@ sub schemaLoop
 sub makeTheResponseBody
 {
   my($self, $yamlResponse, $responseType) = @_;
-  return "" if "HASH" ne ref $yamlResponse->{"content"};
+  return "" if not $responseType or "HASH" ne ref $yamlResponse->{"content"};
   $self->schemaLoop($yamlResponse->{"content"}{$responseType}{"schema"})
 }
 
 sub makeTheResponse
 {
   my($self, $yamlResponses) = @_;
-  my $yamlResponse = exists $yamlResponses->{"200"} ? $yamlResponses->{"200"} : exists $yamlResponses->{"default"} ? $yamlResponses->{"default"} : undef;
-  $yamlResponse or return $self->setErrorMessage("it has no response block (200 || default)");
+  my $yamlResponse;
+  my $selectedCode;
+  for my $code(200..209, 300..308)
+  {
+    if(exists $yamlResponses->{$code})
+    {
+      $selectedCode = $code;
+      $yamlResponse = $yamlResponses->{$code};
+      $self->status($code);
+      last
+    }
+  }
+  $yamlResponse ||= exists $yamlResponses->{"default"} ? $yamlResponses->{"default"} : undef;
+  $yamlResponse or return $self->setErrorMessage("no response block");
   my $responseType   = (keys %{$yamlResponse->{"content"}})[0];
   my $responseHeader = $self->makeTheResponseHeader($yamlResponse) or return;
-  my $responseBody   = $self->makeTheResponseBody($yamlResponse, $responseType) or return;
+  my $responseBody = $self->makeTheResponseBody($yamlResponse, $responseType) or return +{
+    type   => "text/plain",
+    header => $responseHeader,
+    body   => "",
+  };
 
   +{
     type   => $responseType,
@@ -512,6 +527,7 @@ sub makeTheErrorResponse
     $self->debug("it has no response block ($code || default)");
     return
   };
+  
   my $responseType   = (keys %{$yamlResponse->{"content"}})[0];
   my $responseHeader = $self->makeTheResponseHeader($yamlResponse) or return;
   my $responseBody   = $self->makeTheResponseBody($yamlResponse, $responseType) or return;
@@ -594,6 +610,7 @@ sub new
   $YamlCache{$args{"yamlPath"}} = undef if exists $args{"refresh"} and $args{"refresh"};
   $YamlCache{$args{"yamlPath"}} ||= $self->_parseYaml($args{"yamlPath"}) or return;
   $self->randomValue(RESTful::Presenter::OpenAPI::Stub::RandomValue->new);
+  $self->errorMessage("no error message. ");
   $self
 }
 
