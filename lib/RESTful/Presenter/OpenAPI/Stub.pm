@@ -296,7 +296,7 @@ sub makeProperties
   my %result;
   for my $name(keys %{$currentSchema->{"properties"}})
   {
-    $result{$name} = $self->schemaLoop($currentSchema->{"properties"}{$name})
+    $result{$name} = $self->schemaLoop($currentSchema->{"properties"}{$name}, $name)
   }
   \%result
 }
@@ -437,13 +437,27 @@ sub makeBoolean
 
 sub schemaLoop
 {
-  my($self, $currentSchema) = @_;
+  my($self, $currentSchema, $currentName) = @_;
+  $currentName ||= "";
   $currentSchema = $self->replaceRef($currentSchema->{'$ref'}) if exists $currentSchema->{'$ref'};
   return $self->makeOneOf($currentSchema->{"oneOf"}) if exists $currentSchema->{"oneOf"};
   return $self->makeAllOf($currentSchema->{"allOf"}) if exists $currentSchema->{"allOf"};
   return $self->makeAnyOf($currentSchema->{"anyOf"}) if exists $currentSchema->{"anyOf"};
   return "" if not exists $currentSchema->{"type"} or not $currentSchema->{"type"} or not exists $ResponseTypes{$currentSchema->{"type"}};
-  if(exists $currentSchema->{"example"})
+
+  if(exists $currentSchema->{"type"} and $currentSchema->{"type"} eq "boolean")
+  {
+    if(exists $currentSchema->{"example"})
+    {
+      return $currentSchema->{"example"} ? Mojo::JSON->true : Mojo::JSON->false
+    }
+    elsif(exists $currentSchema->{"default"})
+    {
+      return $currentSchema->{"default"} ? Mojo::JSON->true : Mojo::JSON->false
+    }
+    return $self->makeBoolean($currentSchema)
+  }
+  elsif(exists $currentSchema->{"example"})
   {
     my $ins = Struct::Scalars->new($currentSchema->{"example"});
     return $ins->modify(sub {
@@ -457,6 +471,7 @@ sub schemaLoop
     my $ins = Struct::Scalars->new($currentSchema->{"default"});
     return $ins->modify(sub {
       my($str) = @_;
+      $str or return $str;
       utf8::is_utf8 $str or utf8::decode $str;
       $str
     })
