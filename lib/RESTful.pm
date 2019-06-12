@@ -18,6 +18,8 @@ sub startup
   # Configure the application
   $self->secrets($config->{secrets});
 
+  $self->plugin('BasicAuthPlus');
+
   # Router
   my $r = $self->routes;
   $r->any('/stub/*uri/README')->to('readme#index');

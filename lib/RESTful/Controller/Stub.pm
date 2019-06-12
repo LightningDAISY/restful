@@ -68,6 +68,23 @@ sub index
 
   # $self->cookie(userId  => '123456', {expires => time + 3600});
 
+  my $info = $server->basicAuthInfo(
+    "uri"    => $requestPath,
+    "method" => $self->req->method,
+  );
+  if($info and exists $info->{"example"}{"realm"} and exists $info->{"example"}{"username"} and exists $info->{"example"}{"password"})
+  {
+    return $self->render(
+      status => 401,
+      text => "unauthorized",
+    ) unless $self->basic_auth(
+      $info->{"example"}{"realm"} => {
+        username => $info->{"example"}{"username"},
+        password => $info->{"example"}{"password"},
+      }
+    )
+  }
+
   my $res = $server->run(
       uri     => $requestPath,
       method  => $self->req->method,

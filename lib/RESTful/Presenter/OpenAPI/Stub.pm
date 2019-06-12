@@ -49,11 +49,9 @@ sub parseComponents
   my($self, $yaml) = @_;
   $self->components({});
   return if not exists $yaml->{"components"} or 
-            not ref $yaml->{"components"} or
-            not exists $yaml->{"components"}{"schemas"} or
-            not ref $yaml->{"components"}{"schemas"}
+            not ref $yaml->{"components"}
   ;
-  $self->components($yaml->{"components"}{"schemas"})
+  $self->components($yaml->{"components"})
 }
 
 sub readYaml
@@ -331,7 +329,7 @@ sub makeItems
 sub replaceRef
 {
   my($self, $refKey) = @_;
-  $refKey =~ s!^\#/components/schemas/!!;
+  $refKey =~ s!^\#/components/!!;
   my @refKeys = split m!/!, $refKey;
   my $currentRef = $self->components;
   for(my $i=0; $i<=$#refKeys; $i++)
@@ -568,6 +566,32 @@ sub error
       message => "$message ($code block is not found.)",
     }
   }
+}
+
+sub basicAuthInfo
+{
+  my($self, %args) = @_;
+  $self->parseComponents($YamlCache{$self->{"yamlPath"}});
+  my $paths  = $YamlCache{$self->{"yamlPath"}}{"paths"};
+  my $path = $self->pathMatch($args{"uri"}, $paths) or return;
+  my $method = $self->methodMatch($args{"method"}, $paths->{$path}) or return;
+  return if not exists $paths->{$path}{$method}{"security"};
+
+  my $securities = $paths->{$path}{$method}{"security"};
+  for my $securityPair(@$securities)
+  {
+    my $securityName = each %$securityPair;
+    if(exists $self->components->{"securitySchemes"}{$securityName})
+    {
+      my $security = $self->components->{"securitySchemes"}{$securityName};
+      return $security if(
+        exists $security->{"type"} and $security->{"type"} eq "http" and
+        exists $security->{"scheme"} and $security->{"scheme"} eq "basic"
+      );
+    }
+  }
+  $self->debug("securitySchemes ARE NOT MATCHED!!");
+  return
 }
 
 #

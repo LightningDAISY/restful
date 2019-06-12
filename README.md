@@ -8,6 +8,7 @@ sudo cpan Mojolicious
 sudo cpan IO::Socket::SSL
 sudo cpan LWP::UserAgent
 sudo cpan LWP::Protocol::https
+sudo cpan Mojolicious::Plugin::BasicAuthPlus
 cd restful
 cp r_e_s_tful.conf.base r_e_s_tful.conf
 vim r_e_s_tful.conf
