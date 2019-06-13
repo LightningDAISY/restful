@@ -74,6 +74,7 @@ sub index
   );
   if($info and exists $info->{"example"}{"realm"} and exists $info->{"example"}{"username"} and exists $info->{"example"}{"password"})
   {
+    $self->debug($self->req->headers->to_hash);
     return $self->render(
       status => 401,
       text => "unauthorized",

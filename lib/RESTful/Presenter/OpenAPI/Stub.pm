@@ -90,9 +90,10 @@ sub pathMatch
 
     my @matchedValues = $requestUri =~ m!^$matchString/?$!;
     next if not scalar @matchedValues;
+    $self->parameters or $self->parameters({});
+    $self->parameters->{"path"} ||= {};
     for(my $i=0; $i <= $#names; $i++)
     {
-      $self->parameters->{"path"} ||= {};
       $self->parameters->{"path"}{$names[$i]} = $matchedValues[$i];
     }
     return $rawPath
