@@ -50,7 +50,7 @@ sub index
   my($self, %args) = @_;
   my $requestPath = $self->getRequestPath;
   my $yamlPath = $self->getYamlPath or return $self->error("invalid file name");
-  my $yamlFullPath = $ENV{"MOJO_HOME"} . "/" . $self->config->{"yamlDir"} . $yamlPath;
+  my $yamlFullPath = $ENV{"MOJO_HOME"} . "/" . $self->config->{"yamlDirStub"} . $yamlPath;
   my $server = RESTful::Presenter::OpenAPI->new->stub(
     yamlPath => $yamlFullPath,
     refresh  => 1,

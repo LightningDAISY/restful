@@ -1,10 +1,8 @@
 package RESTful::Presenter::OpenAPI::Stub;
 use Mojo::Base 'RESTful::Presenter::Base';
 use RESTful::Presenter::OpenAPI::Stub::RandomValue;
-use YAML::Syck;
 use Struct::Scalars;
 use List::Util;
-use IO::File;
 
 my @PARAMNAMES = qw{ status parameters requestBodies requestMethod requestPath currentParameters currentRequestBodies contentType };
 my %YamlCache;
@@ -19,31 +17,8 @@ my %ResponseTypes = (
   "null"      => "makeNull",
 );
 
-__PACKAGE__->attr([@PARAMNAMES, "components", "errorMessage", "randomValue"]);
+__PACKAGE__->attr([@PARAMNAMES, "components", "randomValue"]);
 
-sub setErrorMessage
-{
-  my($self, $errorMessage) = @_;
-  $self->errorMessage($errorMessage);
-  return
-}
-
-sub _parseYaml
-{
-  my($self, $filePath) = @_;
-  warn "Reading $filePath ...";
-  my $fh = IO::File->new($filePath, "r") or return $self->setErrorMessage($filePath . " is not found.");
-  my $fbody = '';
-  my $buf;
-  $fbody .= $buf while read $fh, $buf, 100;
-  close $fh;
-
-  $YAML::Syck::ImplicitTyping  = 1;
-  $YAML::Syck::ImplicitUnicode = 1;
-  $YAML::Syck::LoadBlessed     = undef;
-  $YAML::Syck::ImplicitUnicode = undef;
-  Load($fbody)
-}
 sub parseComponents
 {
   my($self, $yaml) = @_;
@@ -572,7 +547,7 @@ sub error
 sub basicAuthInfo
 {
   my($self, %args) = @_;
-  $self->parseComponents($YamlCache{$self->{"yamlPath"}});
+  $self->parseComponents($YamlCache{$self->{"yamlPath"}}) if not $self->components;
   my $paths  = $YamlCache{$self->{"yamlPath"}}{"paths"};
   my $path = $self->pathMatch($args{"uri"}, $paths) or return;
   my $method = $self->methodMatch($args{"method"}, $paths->{$path}) or return;
@@ -593,6 +568,16 @@ sub basicAuthInfo
   }
   $self->debug("securitySchemes ARE NOT MATCHED!!");
   return
+}
+
+sub uploadInfo
+{
+  my($self, %args) = @_;
+   $self->parseComponents($YamlCache{$self->{"yamlPath"}}) if not $self->components;
+  my $paths  = $YamlCache{$self->{"yamlPath"}}{"paths"};
+  my $path = $self->pathMatch($args{"uri"}, $paths) or return;
+  my $method = $self->methodMatch($args{"method"}, $paths->{$path}) or return;
+  return if not exists $paths->{$path}{$method}{"security"};
 }
 
 #
@@ -618,7 +603,7 @@ sub run
   $self->status(200);
   $self->parameters({});
   $self->requestBodies({});
-  $self->parseComponents($YamlCache{$self->{"yamlPath"}});
+  $self->parseComponents($YamlCache{$self->{"yamlPath"}}) if not $self->components;
   my $paths  = $YamlCache{$self->{"yamlPath"}}{"paths"};
   my $path   = $self->pathMatch($args{"uri"}, $paths) or return $self->error(404, $args{"uri"} . " path is not matched.");
   $self->requestPath($path);

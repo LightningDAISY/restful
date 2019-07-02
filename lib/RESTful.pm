@@ -1,4 +1,5 @@
 package RESTful;
+use RESTful::Hooks::Cors;
 use Mojo::Base 'Mojolicious';
 
 # This method will run once at server start
@@ -20,10 +21,24 @@ sub startup
 
   $self->plugin('BasicAuthPlus');
 
+  {
+    package RESTful::Base;
+    sub config { $config };
+  }
+
+  $self->hook(
+    before_dispatch => sub {
+      my($c) = @_;
+      RESTful::Hooks::Cors->new->addHeader($c);
+    }
+  );
+
   # Router
   my $r = $self->routes;
   $r->any('/stub/*uri/README')->to('readme#index');
   $r->any('/stub/*uri')->to('stub#index');
+  $r->any('/api/documents/*uri')->to('api#documents');
+  $r->any('/api/repos')->to('api#repos');
 }
 
 1;

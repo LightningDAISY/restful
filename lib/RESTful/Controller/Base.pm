@@ -90,6 +90,19 @@ sub getYamlPath
   $1
 }
 
+sub getDirectoryPath
+{
+  my($self, $apiUri) = @_;
+  $apiUri ||= "";
+  my $baseUri = $self->config->{"baseUri"} . $self->myUri . $apiUri;
+  my $dirPath = $self->req->url;
+  $dirPath =~ s!.*$baseUri!!;
+  $dirPath =~ s!/+$!!;
+  $dirPath = $ENV{"MOJO_HOME"} . "/" . $self->config->{"yamlDir"} . $dirPath;
+  $self->debug($dirPath);
+  return -d $dirPath ? $dirPath : undef
+}
+
 sub getRequestPath
 {
   my($self) = @_;
