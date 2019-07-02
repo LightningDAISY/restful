@@ -29,7 +29,7 @@ sub startup
   $self->hook(
     before_dispatch => sub {
       my($c) = @_;
-      RESTful::Hooks::Cors->new->addHeader($c);
+      RESTful::Hooks::Cors->addHeader($c);
     }
   );
 

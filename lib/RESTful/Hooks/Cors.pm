@@ -9,12 +9,12 @@ my %headerNames = (
 
 sub addHeader
 {
-  my($self, $c) = @_;
+  my($class, $c) = @_;
   my $allowedOrigin = 0;
   for my $name(keys %headerNames)
   {
     my $requestedValue = $c->req->headers->header($name);
-    if($requestedValue and length $requestedValue)
+    if($requestedValue)
     {
       $allowedOrigin = 1;
       $c->res->headers->add(
@@ -27,4 +27,16 @@ sub addHeader
 
 1
 __END__
+
+=SYNOPSIS
+
+  use RESTful::Hooks::Cors;
+  
+  $self->hook(
+    before_dispatch => sub {
+      my($c) = @_;
+      RESTful::Hooks::Cors->addHeader($c)
+    }
+  );
+
 
