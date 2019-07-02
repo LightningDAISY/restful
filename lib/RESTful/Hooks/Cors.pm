@@ -1,6 +1,5 @@
 package RESTful::Hooks::Cors;
-use Mojo::Base -base; # qw{ RESTful::Base };
-use Mojo::Base qw{ RESTful::Base };
+use Mojo::Base -base;
 
 my %headerNames = (
   "Origin" => "Access-Control-Allow-Origin",
@@ -18,7 +17,6 @@ sub addHeader
     if($requestedValue and length $requestedValue)
     {
       $allowedOrigin = 1;
-      $self->debug($name . " " . $requestedValue);
       $c->res->headers->add(
         $headerNames{$name} => $requestedValue
       );
