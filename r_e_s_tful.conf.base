@@ -2,7 +2,7 @@
   secrets => ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'],
   hypnotoad => {
     listen  => ['http://*:6000'],
-    workers => 1,
+    workers => 4,
     upgrade_timeout => 1,
   },
   #
@@ -17,5 +17,8 @@
   # global uri
   #
   outerUri => "https://example.com/ex/stub",
-  yamlDir => 'yamls',
+  viewerUri => "https://example.com/openapiviewer/?",
+  fileUri   => "https://example.com/static/files/OpenAPI",
+  yamlDir   => "yamls/static/files/OpenAPI",
+  yamlDirStub => 'yamls', # TODO : stub only 
 }
